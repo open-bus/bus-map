@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Live Bus Map</title>
+    <title>Open Bus Live Map</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
       html, body, #map {
         height: 100%;
@@ -11,69 +11,55 @@
         padding: 0;
       }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc"></script>
   </head>
   <body>
     <div id="map"></div>
+
     <script>
-      let map;
-      let marker;
-
-      async function fetchTracksolidLocation() {
-        try {
-          const response = await fetch("https://open.10086.io/api/track/query/realTimePosition", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "appKey": "8FB345B8693CCD0030874ECE0B95805F",
-              "appSecret": "c07101ce49e144ebb04016a39e8b472d"
-            },
-            body: JSON.stringify({
-              account: "Offlimits",
-              password: "cd9323048162e373f71fcfad77b7eb67",
-              imei: "862798051314108"
-            })
-          });
-
-          const data = await response.json();
-          if (data && data.data && data.data.lat && data.data.lng) {
-            const position = { lat: parseFloat(data.data.lat), lng: parseFloat(data.data.lng) };
-
-            if (!marker) {
-              marker = new google.maps.Marker({
-                position,
-                map,
-                title: "Live Bus Location",
-                icon: {
-                  url: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
-                  scaledSize: new google.maps.Size(40, 40)
-                }
-              });
-            } else {
-              marker.setPosition(position);
-            }
-
-            map.setCenter(position);
-          }
-        } catch (err) {
-          console.error("GPS fetch error:", err);
-        }
-      }
+      let map, marker;
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: 41.3275, lng: 19.8189 },
-          zoom: 13
+          zoom: 13,
         });
 
-        new google.maps.KmlLayer({
-          url: "https://raw.githubusercontent.com/open-bus/bus-map/refs/heads/main/tirana-city-tour-map.kml",
+        // Load the KML route
+        const kmlLayer = new google.maps.KmlLayer({
+          url: "https://open-bus.github.io/bus-map/tirana-city-tour-map.kml",
           map: map
         });
 
-        fetchTracksolidLocation();
-        setInterval(fetchTracksolidLocation, 30000);
+        // Create marker for the live GPS
+        marker = new google.maps.Marker({
+          map: map,
+          title: "Live Bus Location",
+          icon: {
+            url: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
+            scaledSize: new google.maps.Size(40, 40),
+          }
+        });
+
+        updateLocation();
+        setInterval(updateLocation, 10000); // update every 10 seconds
       }
+
+      async function updateLocation() {
+        try {
+          const res = await fetch("https://tracksolid-proxy.onrender.com/location");
+          const data = await res.json();
+          if (data.latitude && data.longitude) {
+            const position = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+            marker.setPosition(position);
+            map.panTo(position);
+          }
+        } catch (error) {
+          console.error("GPS fetch failed:", error);
+        }
+      }
+
+      window.onload = initMap;
     </script>
   </body>
 </html>
