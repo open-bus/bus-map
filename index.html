@@ -1,65 +1,54 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Open Bus Live Map</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      html, body, #map {
-        height: 100%;
-        margin: 0;
-        padding: 0;
+<head>
+  <title>Live Bus Map</title>
+  <meta charset="utf-8">
+  <style>
+    #map { height: 100vh; width: 100vw; }
+  </style>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc"></script>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const KML_URL = "https://open-bus.github.io/bus-map/Tirana%20City%20Tour%20Map.kml";
+    const LOCATION_API = "https://tracksolid-proxy.onrender.com/location";
+
+    let map;
+    let marker;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 41.3275, lng: 19.8189 },
+        zoom: 13
+      });
+
+      const kmlLayer = new google.maps.KmlLayer({
+        url: KML_URL,
+        map: map,
+        preserveViewport: true
+      });
+
+      marker = new google.maps.Marker({
+        map: map,
+        icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png"
+      });
+
+      updateMarker();
+      setInterval(updateMarker, 10000); // update every 10s
+    }
+
+    async function updateMarker() {
+      try {
+        const res = await fetch(LOCATION_API);
+        const { lat, lng } = await res.json();
+        marker.setPosition({ lat, lng });
+      } catch (err) {
+        console.error("Failed to fetch location", err);
       }
-    </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc"></script>
-  </head>
-  <body>
-    <div id="map"></div>
+    }
 
-    <script>
-      let map, marker;
-
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 41.3275, lng: 19.8189 },
-          zoom: 13,
-        });
-
-        // Load the KML route
-        const kmlLayer = new google.maps.KmlLayer({
-          url: "https://open-bus.github.io/bus-map/tirana-city-tour-map.kml",
-          map: map
-        });
-
-        // Create marker for the live GPS
-        marker = new google.maps.Marker({
-          map: map,
-          title: "Live Bus Location",
-          icon: {
-            url: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
-            scaledSize: new google.maps.Size(40, 40),
-          }
-        });
-
-        updateLocation();
-        setInterval(updateLocation, 10000); // update every 10 seconds
-      }
-
-      async function updateLocation() {
-        try {
-          const res = await fetch("https://tracksolid-proxy.onrender.com/location");
-          const data = await res.json();
-          if (data.latitude && data.longitude) {
-            const position = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
-            marker.setPosition(position);
-            map.panTo(position);
-          }
-        } catch (error) {
-          console.error("GPS fetch failed:", error);
-        }
-      }
-
-      window.onload = initMap;
-    </script>
-  </body>
+    window.onload = initMap;
+  </script>
+</body>
 </html>
