@@ -22,19 +22,22 @@
           zoom: 13,
         });
 
-        // Load the KML route
+        // Load KML route
         new google.maps.KmlLayer({
           url: KML_URL,
           map: map,
           preserveViewport: true,
         });
 
-        // Set up the bus marker
+        // Add bus marker
         marker = new google.maps.Marker({
           map: map,
+          position: { lat: 41.3275, lng: 19.8189 }, // fallback center
           icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
+          title: "Live Bus Location",
         });
 
+        // Initial and repeat updates
         updateMarker();
         setInterval(updateMarker, 10000);
       }
@@ -42,10 +45,15 @@
       async function updateMarker() {
         try {
           const res = await fetch(LOCATION_API);
-          const { lat, lng } = await res.json();
-          marker.setPosition({ lat, lng });
+          const data = await res.json();
+
+          if (data.lat && data.lng) {
+            marker.setPosition({ lat: data.lat, lng: data.lng });
+          } else {
+            console.warn("Invalid GPS data:", data);
+          }
         } catch (err) {
-          console.error('Failed to update marker:', err);
+          console.error("Failed to update marker:", err);
         }
       }
     </script>
