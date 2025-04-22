@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Open Bus Albania Live Map</title>
+    <title>Open Bus Albania - Live Map</title>
     <meta charset="utf-8" />
     <style>
-      html, body { margin: 0; padding: 0; height: 100%; }
-      #map { height: 100%; width: 100%; }
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; }
     </style>
   </head>
   <body>
@@ -13,7 +13,7 @@
 
     <script>
       let map, marker;
-      const KML_URL = 'https://open-bus.github.io/bus-map/Tirana%20City%20Tour%20Map%20(1).kml';
+      const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
       const LOCATION_API = 'https://tracksolid-proxy.onrender.com/location';
 
       function initMap() {
@@ -22,12 +22,14 @@
           zoom: 13,
         });
 
-        const kmlLayer = new google.maps.KmlLayer({
+        // Load the KML route
+        new google.maps.KmlLayer({
           url: KML_URL,
           map: map,
           preserveViewport: true,
         });
 
+        // Set up the bus marker
         marker = new google.maps.Marker({
           map: map,
           icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
@@ -42,8 +44,8 @@
           const res = await fetch(LOCATION_API);
           const { lat, lng } = await res.json();
           marker.setPosition({ lat, lng });
-        } catch (e) {
-          console.error("Failed to update marker:", e);
+        } catch (err) {
+          console.error('Failed to update marker:', err);
         }
       }
     </script>
