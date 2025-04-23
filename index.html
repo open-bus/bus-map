@@ -1,79 +1,72 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Open Bus Albania - Live Map</title>
-    <meta charset="utf-8" />
-    <style>
-      html, body { height: 100%; margin: 0; padding: 0; }
-      #map { height: 100%; }
-    </style>
-  </head>
-  <body>
-    <div id="map"></div>
+<head>
+  <title>Open Bus Albania - Live Map</title>
+  <meta charset="utf-8" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #map { height: 100%; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
 
-    <script>
-      let map, markerBlue, markerRed;
+  <script>
+    let map, markerBlue, markerRed;
+    const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
+    const LOCATION_API_1 = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314108'; // Blue
+    const LOCATION_API_2 = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314033'; // Red
 
-      const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 41.3275, lng: 19.8189 },
+        zoom: 13,
+      });
 
-      const DEVICES = [
-        {
-          imei: '862798051314108', // Blue bus
-          icon: 'https://maps.google.com/mapfiles/kml/shapes/bus.png',
-          color: 'blue'
-        },
-        {
-          imei: '862798051314033', // Red bus
-          icon: 'https://maps.google.com/mapfiles/kml/paddle/red-circle.png',
-          color: 'red'
+      new google.maps.KmlLayer({
+        url: KML_URL,
+        map: map,
+        preserveViewport: true,
+      });
+
+      markerBlue = new google.maps.Marker({
+        map: map,
+        icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
+      });
+
+      markerRed = new google.maps.Marker({
+        map: map,
+        icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      });
+
+      updateMarkers();
+      setInterval(updateMarkers, 10000);
+    }
+
+    async function updateMarkers() {
+      try {
+        const [res1, res2] = await Promise.all([
+          fetch(LOCATION_API_1),
+          fetch(LOCATION_API_2)
+        ]);
+        const data1 = await res1.json();
+        const data2 = await res2.json();
+
+        if (data1.lat && data1.lng) {
+          markerBlue.setPosition({ lat: data1.lat, lng: data1.lng });
         }
-      ];
 
-      const markers = {};
-
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 41.3275, lng: 19.8189 },
-          zoom: 13,
-        });
-
-        // Load KML
-        new google.maps.KmlLayer({
-          url: KML_URL,
-          map: map,
-          preserveViewport: true,
-        });
-
-        // Initialize empty markers
-        DEVICES.forEach(device => {
-          markers[device.imei] = new google.maps.Marker({
-            map,
-            icon: device.icon,
-            title: `Bus (${device.color})`,
-          });
-        });
-
-        // Start updates
-        updateMarkers();
-        setInterval(updateMarkers, 10000);
-      }
-
-      async function updateMarkers() {
-        for (const device of DEVICES) {
-          try {
-            const res = await fetch(`https://tracksolid-proxy.onrender.com/location?imei=${device.imei}`);
-            const { lat, lng } = await res.json();
-            markers[device.imei].setPosition({ lat, lng });
-          } catch (e) {
-            console.error(`Failed to update ${device.color} bus:`, e);
-          }
+        if (data2.lat && data2.lng) {
+          markerRed.setPosition({ lat: data2.lat, lng: data2.lng });
         }
+      } catch (err) {
+        console.error("Failed to update GPS locations:", err);
       }
-    </script>
+    }
+  </script>
 
-    <script async
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap">
-    </script>
-  </body>
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap">
+  </script>
+</body>
 </html>
-
