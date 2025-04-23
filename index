@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Open Bus Albania - Live Map</title>
+    <meta charset="utf-8" />
+    <style>
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script>
+      let map, blueBus, redBus;
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 41.3275, lng: 19.8189 },
+          zoom: 13,
+        });
+
+        new google.maps.KmlLayer({
+          url: "https://open-bus.github.io/bus-map/tirana-tour.kml",
+          map: map,
+          preserveViewport: true,
+        });
+
+        blueBus = new google.maps.Marker({
+          map,
+          icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png"
+        });
+
+        redBus = new google.maps.Marker({
+          map,
+          icon: "https://maps.google.com/mapfiles/kml/pal4/icon56.png"
+        });
+
+        updateMarkers();
+        setInterval(updateMarkers, 10000);
+      }
+
+      async function updateMarkers() {
+        try {
+          const blue = await fetch("https://tracksolid-proxy.onrender.com/location?imei=862798051314108").then(res => res.json());
+          const red = await fetch("https://tracksolid-proxy.onrender.com/location?imei=862798051314033").then(res => res.json());
+
+          blueBus.setPosition({ lat: blue.lat, lng: blue.lng });
+          redBus.setPosition({ lat: red.lat, lng: red.lng });
+
+        } catch (err) {
+          console.error("Error updating markers:", err);
+        }
+      }
+    </script>
+
+    <script async
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap">
+    </script>
+  </body>
+</html>
