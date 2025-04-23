@@ -15,8 +15,21 @@
       let map, markerBlue, markerRed;
 
       const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
-      const API_BLUE = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314108';
-      const API_RED = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314033';
+
+      const DEVICES = [
+        {
+          imei: '862798051314108', // Blue bus
+          icon: 'https://maps.google.com/mapfiles/kml/shapes/bus.png',
+          color: 'blue'
+        },
+        {
+          imei: '862798051314033', // Red bus
+          icon: 'https://maps.google.com/mapfiles/kml/paddle/red-circle.png',
+          color: 'red'
+        }
+      ];
+
+      const markers = {};
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
@@ -24,49 +37,36 @@
           zoom: 13,
         });
 
-        // Load the KML route
+        // Load KML
         new google.maps.KmlLayer({
           url: KML_URL,
           map: map,
           preserveViewport: true,
         });
 
-        // Bus icons
-        markerBlue = new google.maps.Marker({
-          map: map,
-          icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
+        // Initialize empty markers
+        DEVICES.forEach(device => {
+          markers[device.imei] = new google.maps.Marker({
+            map,
+            icon: device.icon,
+            title: `Bus (${device.color})`,
+          });
         });
 
-        markerRed = new google.maps.Marker({
-          map: map,
-          icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-        });
-
-        // Start updating
+        // Start updates
         updateMarkers();
         setInterval(updateMarkers, 10000);
       }
 
-      async function fetchPosition(url) {
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-          return data;
-        } catch {
-          return null;
-        }
-      }
-
       async function updateMarkers() {
-        const blueData = await fetchPosition(API_BLUE);
-        const redData = await fetchPosition(API_RED);
-
-        if (blueData?.lat && blueData?.lng) {
-          markerBlue.setPosition({ lat: blueData.lat, lng: blueData.lng });
-        }
-
-        if (redData?.lat && redData?.lng) {
-          markerRed.setPosition({ lat: redData.lat, lng: redData.lng });
+        for (const device of DEVICES) {
+          try {
+            const res = await fetch(`https://tracksolid-proxy.onrender.com/location?imei=${device.imei}`);
+            const { lat, lng } = await res.json();
+            markers[device.imei].setPosition({ lat, lng });
+          } catch (e) {
+            console.error(`Failed to update ${device.color} bus:`, e);
+          }
         }
       }
     </script>
@@ -76,3 +76,4 @@
     </script>
   </body>
 </html>
+
