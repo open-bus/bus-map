@@ -1,72 +1,71 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Open Bus Albania - Live Map</title>
-  <meta charset="utf-8" />
-  <style>
-    html, body { height: 100%; margin: 0; padding: 0; }
-    #map { height: 100%; width: 100%; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
+  <head>
+    <title>Open Bus Albania - Live Map</title>
+    <meta charset="utf-8" />
+    <style>
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
 
-  <script>
-    let map, markerBlue, markerRed;
-    const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
-    const LOCATION_API_1 = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314108'; // Blue
-    const LOCATION_API_2 = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314033'; // Red
+    <script>
+      const mapCenter = { lat: 41.3275, lng: 19.8189 };
+      const LOCATION_API_BLUE = 'https://tracksolid-proxy.onrender.com/location'; // AB721IP
+      const LOCATION_API_RED = 'https://tracksolid-proxy.onrender.com/location2'; // 862798051314033
+      const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 41.3275, lng: 19.8189 },
-        zoom: 13,
-      });
+      let map, markerBlue, markerRed;
 
-      new google.maps.KmlLayer({
-        url: KML_URL,
-        map: map,
-        preserveViewport: true,
-      });
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: mapCenter,
+          zoom: 13,
+        });
 
-      markerBlue = new google.maps.Marker({
-        map: map,
-        icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
-      });
+        new google.maps.KmlLayer({
+          url: KML_URL,
+          map: map,
+          preserveViewport: true,
+        });
 
-      markerRed = new google.maps.Marker({
-        map: map,
-        icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-      });
+        markerBlue = new google.maps.Marker({
+          map: map,
+          icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
+        });
 
-      updateMarkers();
-      setInterval(updateMarkers, 10000);
-    }
+        markerRed = new google.maps.Marker({
+          map: map,
+          icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        });
 
-    async function updateMarkers() {
-      try {
-        const [res1, res2] = await Promise.all([
-          fetch(LOCATION_API_1),
-          fetch(LOCATION_API_2)
-        ]);
-        const data1 = await res1.json();
-        const data2 = await res2.json();
-
-        if (data1.lat && data1.lng) {
-          markerBlue.setPosition({ lat: data1.lat, lng: data1.lng });
-        }
-
-        if (data2.lat && data2.lng) {
-          markerRed.setPosition({ lat: data2.lat, lng: data2.lng });
-        }
-      } catch (err) {
-        console.error("Failed to update GPS locations:", err);
+        updateMarkers();
+        setInterval(updateMarkers, 10000);
       }
-    }
-  </script>
 
-  <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap">
-  </script>
-</body>
+      async function updateMarkers() {
+        try {
+          const [blueRes, redRes] = await Promise.all([
+            fetch(LOCATION_API_BLUE).then(res => res.json()),
+            fetch(LOCATION_API_RED).then(res => res.json())
+          ]);
+
+          if (blueRes.lat && blueRes.lng) {
+            markerBlue.setPosition({ lat: blueRes.lat, lng: blueRes.lng });
+          }
+          if (redRes.lat && redRes.lng) {
+            markerRed.setPosition({ lat: redRes.lat, lng: redRes.lng });
+          }
+        } catch (error) {
+          console.error("Failed to update markers:", error);
+        }
+      }
+    </script>
+
+    <script async
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcOwNMc5bmnN61hHrR3c5wbxDbFc-QyYc&callback=initMap">
+    </script>
+  </body>
 </html>
