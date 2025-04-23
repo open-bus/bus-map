@@ -5,14 +5,18 @@
     <meta charset="utf-8" />
     <style>
       html, body { height: 100%; margin: 0; padding: 0; }
-      #map { height: 100%; width: 100%; }
+      #map { height: 100%; }
     </style>
   </head>
   <body>
     <div id="map"></div>
 
     <script>
-      let map, blueBus, redBus;
+      let map, markerBlue, markerRed;
+
+      const KML_URL = 'https://open-bus.github.io/bus-map/tirana-tour.kml';
+      const API_BLUE = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314108';
+      const API_RED = 'https://tracksolid-proxy.onrender.com/location?imei=862798051314033';
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
@@ -20,36 +24,49 @@
           zoom: 13,
         });
 
+        // Load the KML route
         new google.maps.KmlLayer({
-          url: "https://open-bus.github.io/bus-map/tirana-tour.kml",
+          url: KML_URL,
           map: map,
           preserveViewport: true,
         });
 
-        blueBus = new google.maps.Marker({
-          map,
-          icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png"
+        // Bus icons
+        markerBlue = new google.maps.Marker({
+          map: map,
+          icon: "https://maps.google.com/mapfiles/kml/shapes/bus.png",
         });
 
-        redBus = new google.maps.Marker({
-          map,
-          icon: "https://maps.google.com/mapfiles/kml/pal4/icon56.png"
+        markerRed = new google.maps.Marker({
+          map: map,
+          icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
         });
 
+        // Start updating
         updateMarkers();
         setInterval(updateMarkers, 10000);
       }
 
-      async function updateMarkers() {
+      async function fetchPosition(url) {
         try {
-          const blue = await fetch("https://tracksolid-proxy.onrender.com/location?imei=862798051314108").then(res => res.json());
-          const red = await fetch("https://tracksolid-proxy.onrender.com/location?imei=862798051314033").then(res => res.json());
+          const res = await fetch(url);
+          const data = await res.json();
+          return data;
+        } catch {
+          return null;
+        }
+      }
 
-          blueBus.setPosition({ lat: blue.lat, lng: blue.lng });
-          redBus.setPosition({ lat: red.lat, lng: red.lng });
+      async function updateMarkers() {
+        const blueData = await fetchPosition(API_BLUE);
+        const redData = await fetchPosition(API_RED);
 
-        } catch (err) {
-          console.error("Error updating markers:", err);
+        if (blueData?.lat && blueData?.lng) {
+          markerBlue.setPosition({ lat: blueData.lat, lng: blueData.lng });
+        }
+
+        if (redData?.lat && redData?.lng) {
+          markerRed.setPosition({ lat: redData.lat, lng: redData.lng });
         }
       }
     </script>
