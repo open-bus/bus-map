@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Live Tirana Bus Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+    <style>
+      html, body, #map {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <script>
+      let map;
+      let bus1, bus2;
+      let pos1 = { lat: 41.3275, lng: 19.8189 };
+      let pos2 = { lat: 41.3315, lng: 19.8209 };
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 41.3275, lng: 19.8189 },
+          zoom: 13,
+        });
+
+        const kmlLayer = new google.maps.KmlLayer({
+          url: "https://open-bus.github.io/bus-map/tirana-tour.kml",
+          map: map,
+        });
+
+        bus1 = new google.maps.Marker({
+          position: pos1,
+          map: map,
+          icon: {
+            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            scaledSize: new google.maps.Size(40, 40),
+          },
+          title: "Bus 1"
+        });
+
+        bus2 = new google.maps.Marker({
+          position: pos2,
+          map: map,
+          icon: {
+            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            scaledSize: new google.maps.Size(40, 40),
+          },
+          title: "Bus 2"
+        });
+
+        setInterval(updateSimulatedLocations, 15000);
+      }
+
+      function updateSimulatedLocations() {
+        pos1.lat += (Math.random() - 0.5) * 0.001;
+        pos1.lng += (Math.random() - 0.5) * 0.001;
+        pos2.lat += (Math.random() - 0.5) * 0.001;
+        pos2.lng += (Math.random() - 0.5) * 0.001;
+
+        bus1.setPosition(pos1);
+        bus2.setPosition(pos2);
+      }
+
+      window.onload = initMap;
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+  </body>
+</html>
